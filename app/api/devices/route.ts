@@ -105,18 +105,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new device
+    const insertData: any = {
+      uuid: body.uuid,
+      name: body.name,
+      location: body.location,
+      device_version: body.device_version,
+      config: body.config || {},
+      online_status: true,
+      is_active: true
+    }
+
+    if (body.owner_uuid) {
+      insertData.owner_uuid = body.owner_uuid
+    }
+
     const { data, error } = await supabase
       .from('devices')
-      .insert({
-        uuid: body.uuid,
-        owner_uuid: body.owner_uuid,
-        name: body.name,
-        location: body.location,
-        device_version: body.device_version,
-        config: body.config || {},
-        online_status: true,
-        is_active: true
-      })
+      .insert(insertData)
       .select()
       .single()
 
