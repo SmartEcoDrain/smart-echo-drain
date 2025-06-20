@@ -11,10 +11,9 @@ interface AddressData {
   city: string
   barangay: string
   street: string
-  coordinates?: {
-    lat: number
-    lng: number
-  }
+  country: string
+  postal_code: string
+  municipality: string
 }
 
 interface AddressDropdownProps {
@@ -160,7 +159,8 @@ export function AddressDropdown({ value, onChange, required = false }: AddressDr
       region: region?.desc || '',
       province: '',
       city: '',
-      barangay: ''
+      barangay: '',
+      municipality: ''
     })
 
     // Load provinces for selected region
@@ -182,7 +182,8 @@ export function AddressDropdown({ value, onChange, required = false }: AddressDr
       ...value,
       province: province?.desc || '',
       city: '',
-      barangay: ''
+      barangay: '',
+      municipality: ''
     })
 
     // Load cities for selected province
@@ -201,7 +202,8 @@ export function AddressDropdown({ value, onChange, required = false }: AddressDr
     onChange({
       ...value,
       city: city?.desc || '',
-      barangay: ''
+      barangay: '',
+      municipality: city?.desc || ''
     })
 
     // Load barangays for selected city
@@ -330,7 +332,15 @@ export function AddressDropdown({ value, onChange, required = false }: AddressDr
         <div className="p-4 bg-gradient-to-br from-chart-1/5 to-chart-1/10 rounded-lg border border-chart-1/20">
           <Label className="text-sm font-medium text-foreground/80">Address Preview:</Label>
           <div className="text-foreground font-medium mt-1">
-            {[value.barangay, value.city, value.province, value.region]
+            {[
+              value.street,
+              value.barangay, 
+              value.municipality || value.city, 
+              value.province, 
+              value.region,
+              value.country,
+              value.postal_code
+            ]
               .filter(Boolean)
               .join(', ')}
           </div>

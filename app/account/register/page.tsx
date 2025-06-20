@@ -25,10 +25,9 @@ interface AddressData {
   city: string
   barangay: string
   street: string
-  coordinates?: {
-    lat: number
-    lng: number
-  }
+  country: string
+  postal_code: string
+  municipality: string
 }
 
 interface FormData {
@@ -61,7 +60,10 @@ export default function RegisterPage() {
       province: '',
       city: '',
       barangay: '',
-      street: ''
+      street: '',
+      country: 'PH',
+      postal_code: '',
+      municipality: ''
     },
     gender: ''
   })
@@ -464,20 +466,38 @@ export default function RegisterPage() {
                     required={false}
                   />
 
-                  <div>
-                    <Label htmlFor="street" className="text-sm font-medium text-foreground/80">
-                      Street Address
-                    </Label>
-                    <Input
-                      id="street"
-                      value={formData.address.street}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        address: { ...prev.address, street: e.target.value }
-                      }))}
-                      placeholder="House number, street name, subdivision"
-                      className="border-chart-1/20 focus:border-chart-1"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="street" className="text-sm font-medium text-foreground/80">
+                        Street Address
+                      </Label>
+                      <Input
+                        id="street"
+                        value={formData.address.street}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          address: { ...prev.address, street: e.target.value }
+                        }))}
+                        placeholder="House number, street name, subdivision"
+                        className="border-chart-1/20 focus:border-chart-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="postalCode" className="text-sm font-medium text-foreground/80">
+                        Postal Code
+                      </Label>
+                      <Input
+                        id="postalCode"
+                        value={formData.address.postal_code}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          address: { ...prev.address, postal_code: e.target.value }
+                        }))}
+                        placeholder="e.g. 1234"
+                        className="border-chart-1/20 focus:border-chart-1"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
