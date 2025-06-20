@@ -1,4 +1,4 @@
-import { createClient } from '../../supabase/server'
+import { createAdminClient } from '../../supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RegisterRequest {
@@ -23,6 +23,7 @@ interface RegisterRequest {
       lng: number
     }
   }
+  gender?: string
 }
 
 // POST: User registration
@@ -54,12 +55,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Create user account with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: body.email,
-      password: body.password
+      password: body.password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/account/verify`
+      }
     })
 
     if (authError) {
@@ -76,25 +80,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create user profile
-    const { data: profileData, error: profileError } = await supabase
+    // Prepare profile data with proper defaults
+    const profileData = {
+      uuid: authData.user.id,
+      email: body.email,
+      full_name: body.full_name,
+      name: body.name || {},
+      phone_number: body.phone_number || null,
+      address: body.address || {},
+      gender: body.gender || null,
+      settings: {},
+      is_admin: false
+    }
+
+    // Create user profile with error handling
+    const { data: insertedProfile, error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        uuid: authData.user.id,
-        email: body.email,
-        full_name: body.full_name,
-        name: body.name || {},
-        phone_number: body.phone_number,
-        address: body.address || {},
-        settings: {},
-        is_admin: false
-      })
+      .insert(profileData)
       .select()
       .single()
 
     if (profileError) {
-      // If profile creation fails, we should clean up the auth user
-      // But Supabase doesn't allow deleting users from client-side
+      console.error('Profile creation error:', profileError)
+      
+      // Try to clean up the auth user if profile creation fails
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id)
+      } catch (cleanupError) {
+        console.error('Failed to cleanup auth user:', cleanupError)
+      }
+      
       return NextResponse.json(
         { error: 'Failed to create user profile', details: profileError.message },
         { status: 500 }
@@ -103,22 +118,24 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check your email to verify your account.',
       user: {
         id: authData.user.id,
         email: authData.user.email,
         created_at: authData.user.created_at,
         email_confirmed: authData.user.email_confirmed_at ? true : false
       },
-      profile: profileData,
+      profile: insertedProfile,
       session: authData.session ? {
         access_token: authData.session.access_token,
         refresh_token: authData.session.refresh_token,
         expires_at: authData.session.expires_at
-      } : null
+      } : null,
+      verification_required: !authData.user.email_confirmed_at
     })
 
   } catch (error) {
+    console.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Invalid request format', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 400 }

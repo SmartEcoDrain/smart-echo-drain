@@ -424,7 +424,7 @@ export default function RegisterPage() {
                         value={formData.gender}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
                       >
-                        <SelectTrigger className="border-accent/20 focus:border-accent">
+                        <SelectTrigger className="w-full border-accent/20 focus:border-accent">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                         <SelectContent>

@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
         id: authData.user.id,
         email: authData.user.email,
         created_at: authData.user.created_at,
-        last_sign_in_at: authData.user.last_sign_in_at
+        last_sign_in_at: authData.user.last_sign_in_at,
+        email_confirmed: authData.user.email_confirmed_at ? true : false
       },
       profile: profile && profile.length > 0 ? profile[0] : null,
       session: {
