@@ -5,26 +5,24 @@ import { NextRequest, NextResponse } from 'next/server'
 const ESP32_API_KEY = process.env.ESP32_API_KEY
 
 interface DeviceRegistrationRequest {
-  device_uuid?: string
-  owner_uuid: string
+  uuid?: string
   name: string
+  owner_uuid: string
   location: {
     region?: string
     province?: string
     city?: string
     barangay?: string
     street?: string
-    coordinates?: {
-      lat: number
-      lng: number
-    }
+    postal_code?: string
+    country?: string
   }
   device_version: string
   config?: Record<string, any>
 }
 
 interface DeviceUpdateRequest {
-  device_uuid: string
+  uuid: string
   name?: string
   location?: any
   online_status?: boolean
@@ -51,9 +49,9 @@ export async function POST(request: NextRequest) {
     const body: DeviceRegistrationRequest = await request.json()
     
     // Validate required fields
-    if (!body.owner_uuid || !body.name || !body.device_version) {
+    if (!body.uuid || !body.name || !body.device_version || !body.location) {
       return NextResponse.json(
-        { error: 'Missing required fields: owner_uuid, name, device_version' },
+        { error: 'Missing required fields: uuid, name, device_version, location' },
         { status: 400 }
       )
     }
@@ -61,11 +59,11 @@ export async function POST(request: NextRequest) {
     const supabase = await createAdminClient()
 
     // Check if device already exists (for update)
-    if (body.device_uuid) {
+    if (body.uuid) {
       const { data: existingDevice, error: checkError } = await supabase
         .from('devices')
         .select('uuid')
-        .eq('uuid', body.device_uuid)
+        .eq('uuid', body.uuid)
         .single()
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -87,7 +85,7 @@ export async function POST(request: NextRequest) {
             online_status: true,
             updated_at: new Date().toISOString()
           })
-          .eq('uuid', body.device_uuid)
+          .eq('uuid', body.uuid)
           .select()
           .single()
 
@@ -110,7 +108,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('devices')
       .insert({
-        uuid: body.device_uuid,
+        uuid: body.uuid,
         owner_uuid: body.owner_uuid,
         name: body.name,
         location: body.location,
@@ -156,7 +154,7 @@ export async function PUT(request: NextRequest) {
 
     const body: DeviceUpdateRequest = await request.json()
     
-    if (!body.device_uuid) {
+    if (!body.uuid) {
       return NextResponse.json(
         { error: 'Missing required field: device_uuid' },
         { status: 400 }
@@ -178,7 +176,7 @@ export async function PUT(request: NextRequest) {
     const { data, error } = await supabase
       .from('devices')
       .update(updateData)
-      .eq('uuid', body.device_uuid)
+      .eq('uuid', body.uuid)
       .select()
       .single()
 
