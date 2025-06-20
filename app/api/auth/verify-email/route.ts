@@ -6,7 +6,7 @@ interface VerifyEmailRequest {
   email: string
 }
 
-// POST: Verify email with token
+// POST: Verify email with OTP token
 export async function POST(request: NextRequest) {
   try {
     const body: VerifyEmailRequest = await request.json()
@@ -20,16 +20,17 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Verify the email with the token
+    // Verify the email with the OTP token
     const { data, error } = await supabase.auth.verifyOtp({
       email: body.email,
       token: body.token,
-      type: 'signup'
+      type: 'email'  // Changed from 'signup' to 'email'
     })
 
     if (error) {
+      console.error('OTP verification error:', error)
       return NextResponse.json(
-        { error: 'Email verification failed', details: error.message },
+        { error: 'Invalid or expired verification code', details: error.message },
         { status: 400 }
       )
     }
@@ -41,6 +42,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Update user profile if needed
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ email_verified: true })
+      .eq('uuid', data.user.id)
+
+    if (updateError) {
+      console.error('Profile update error:', updateError)
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Email verified successfully',
@@ -48,10 +59,12 @@ export async function POST(request: NextRequest) {
         id: data.user.id,
         email: data.user.email,
         email_confirmed: true
-      }
+      },
+      session: data.session
     })
 
   } catch (error) {
+    console.error('Verification error:', error)
     return NextResponse.json(
       { error: 'Invalid request format', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 400 }

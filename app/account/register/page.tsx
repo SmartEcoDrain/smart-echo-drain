@@ -96,7 +96,7 @@ export default function RegisterPage() {
       nameData.last_name,
       nameData.suffix
     ].filter(part => part.trim() !== '')
-    
+
     setFormData(prev => ({
       ...prev,
       full_name: parts.join(' ')
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setLoading(true)
@@ -176,11 +176,11 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed')
       }
 
-      setSuccess('Registration successful! Redirecting to login...')
-      
-      // Redirect after success
+      setSuccess('Registration successful! Please check your email for verification.')
+
+      // Redirect to verification page instead of login
       setTimeout(() => {
-        router.push('/account/login?message=Registration successful. Please log in.')
+        router.push(`/account/verification?email=${encodeURIComponent(formData.email)}`)
       }, 2000)
 
     } catch (err) {
@@ -208,7 +208,7 @@ export default function RegisterPage() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-white to-white/80 transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
@@ -228,7 +228,7 @@ export default function RegisterPage() {
               Join Smart Echo Drain monitoring system
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Status Messages */}
@@ -237,7 +237,7 @@ export default function RegisterPage() {
                   <AlertDescription className="font-medium">{error}</AlertDescription>
                 </Alert>
               )}
-              
+
               {success && (
                 <Alert className="border-green-500/50 bg-green-50 text-green-700">
                   <AlertDescription className="font-medium">{success}</AlertDescription>
@@ -252,7 +252,7 @@ export default function RegisterPage() {
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Account Information</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="email" className="text-sm font-medium text-foreground/80">
@@ -338,7 +338,7 @@ export default function RegisterPage() {
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -456,7 +456,7 @@ export default function RegisterPage() {
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">Address Information</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <AddressDropdown
                     value={formData.address}
@@ -483,9 +483,9 @@ export default function RegisterPage() {
               </div>
 
               {/* Submit Button */}
-              <Button 
-                type="submit" 
-                className="w-full py-6 text-lg font-semibold btn-gradient hover:shadow-lg transition-all duration-300" 
+              <Button
+                type="submit"
+                className="w-full py-6 text-lg font-semibold btn-gradient hover:shadow-lg transition-all duration-300"
                 disabled={loading}
               >
                 {loading ? (
@@ -501,8 +501,8 @@ export default function RegisterPage() {
               {/* Login Link */}
               <div className="text-center pt-4">
                 <span className="text-muted-foreground">Already have an account? </span>
-                <Link 
-                  href="/account/login" 
+                <Link
+                  href="/account/login"
                   className="text-primary hover:text-primary/80 font-semibold transition-colors"
                 >
                   Sign in here

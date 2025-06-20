@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Mail, CheckCircle, Clock } from 'lucide-react'
@@ -13,6 +15,7 @@ function VerificationPageContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get('email')
 
+  const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -32,6 +35,53 @@ function VerificationPageContent() {
       return () => clearTimeout(timer)
     }
   }, [resendCooldown])
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!otp || otp.length !== 6) {
+      setError('Please enter a valid 6-digit code')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: otp, email })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Verification failed')
+      }
+
+      setSuccess('Email verified successfully!')
+      
+      // Store session if provided
+      if (data.session) {
+        localStorage.setItem('auth_token', data.session.access_token)
+        localStorage.setItem('refresh_token', data.session.refresh_token)
+      }
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.push('/account/login?message=Email verified successfully! Please log in.')
+      }, 2000)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleResendVerification = async () => {
     if (!email || resendCooldown > 0) return
@@ -55,38 +105,11 @@ function VerificationPageContent() {
         throw new Error(data.error || 'Failed to resend verification email')
       }
 
-      setSuccess('Verification email sent! Please check your inbox.')
+      setSuccess('New verification code sent! Please check your email.')
       setResendCooldown(60) // 1 minute cooldown
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend verification email')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const checkVerificationStatus = async () => {
-    if (!email) return
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await fetch(`/api/auth/check-verification?email=${encodeURIComponent(email)}`)
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to check verification status')
-      }
-
-      if (data.verified) {
-        router.push('/account/login?message=Email verified successfully! Please log in.')
-      } else {
-        setError('Email not yet verified. Please check your inbox.')
-      }
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check verification status')
     } finally {
       setLoading(false)
     }
@@ -116,10 +139,10 @@ function VerificationPageContent() {
               <Mail className="h-8 w-8 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold text-gradient">
-              Check Your Email
+              Enter Verification Code
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              We've sent a verification link to your email address
+              We've sent a 6-digit code to your email address
             </CardDescription>
           </CardHeader>
           
@@ -140,9 +163,43 @@ function VerificationPageContent() {
 
             {/* Email Display */}
             <div className="p-4 bg-muted/50 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-1">Verification email sent to:</p>
+              <p className="text-sm text-muted-foreground mb-1">Verification code sent to:</p>
               <p className="font-medium text-foreground">{email}</p>
             </div>
+
+            {/* OTP Form */}
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <Label htmlFor="otp" className="text-sm font-medium text-foreground/80">
+                  Verification Code
+                </Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter 6-digit code"
+                  className="text-center text-lg tracking-widest font-mono"
+                  maxLength={6}
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full btn-gradient hover:shadow-lg transition-all duration-300"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Verifying...
+                  </div>
+                ) : (
+                  'Verify Email'
+                )}
+              </Button>
+            </form>
 
             {/* Instructions */}
             <div className="space-y-3 text-sm text-muted-foreground">
@@ -150,13 +207,13 @@ function VerificationPageContent() {
                 <div className="mt-0.5 p-1 bg-primary/10 rounded-full">
                   <div className="w-2 h-2 bg-primary rounded-full" />
                 </div>
-                <p>Check your email inbox for a verification message from Smart Echo Drain</p>
+                <p>Check your email inbox for a 6-digit verification code</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 p-1 bg-primary/10 rounded-full">
                   <div className="w-2 h-2 bg-primary rounded-full" />
                 </div>
-                <p>Click the verification link in the email to activate your account</p>
+                <p>Enter the code above to verify your email address</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 p-1 bg-primary/10 rounded-full">
@@ -166,23 +223,8 @@ function VerificationPageContent() {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Resend Button */}
             <div className="space-y-3">
-              <Button 
-                onClick={checkVerificationStatus}
-                className="w-full btn-gradient hover:shadow-lg transition-all duration-300" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Checking...
-                  </div>
-                ) : (
-                  'I\'ve Verified My Email'
-                )}
-              </Button>
-
               <Button 
                 onClick={handleResendVerification}
                 variant="outline"
@@ -200,7 +242,7 @@ function VerificationPageContent() {
                     Sending...
                   </div>
                 ) : (
-                  'Resend Verification Email'
+                  'Resend Verification Code'
                 )}
               </Button>
             </div>
