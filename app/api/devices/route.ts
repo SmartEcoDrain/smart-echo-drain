@@ -200,3 +200,96 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+// GET: Retrieve device data
+export async function GET(request: NextRequest) {
+  try {
+    // Validate API key
+    if (!validateApiKey(request)) {
+      return NextResponse.json(
+        { error: 'Invalid API key' },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const uuid = searchParams.get('uuid')
+    const owner_uuid = searchParams.get('owner_uuid')
+    const name = searchParams.get('name')
+    const online_only = searchParams.get('online_only') === 'true'
+    const active_only = searchParams.get('active_only') === 'true'
+
+    const supabase = await createAdminClient()
+
+    let query = supabase.from('devices').select('*')
+
+    // Filter by specific device UUID
+    if (uuid) {
+      query = query.eq('uuid', uuid)
+      
+      const { data, error } = await query.single()
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return NextResponse.json(
+            { error: 'Device not found' },
+            { status: 404 }
+          )
+        }
+        return NextResponse.json(
+          { error: 'Database error', details: error.message },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        device: data
+      })
+    }
+
+    // Filter by owner UUID
+    if (owner_uuid) {
+      query = query.eq('owner_uuid', owner_uuid)
+    }
+
+    // Filter by device name (partial match)
+    if (name) {
+      query = query.ilike('name', `%${name}%`)
+    }
+
+    // Filter by online status
+    if (online_only) {
+      query = query.eq('online_status', true)
+    }
+
+    // Filter by active status
+    if (active_only) {
+      query = query.eq('is_active', true)
+    }
+
+    // Order by updated_at descending
+    query = query.order('updated_at', { ascending: false })
+
+    const { data, error } = await query
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Database error', details: error.message },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      devices: data,
+      count: data.length
+    })
+
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Invalid request format', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 400 }
+    )
+  }
+}
