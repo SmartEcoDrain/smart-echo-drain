@@ -1,4 +1,4 @@
-import { createClient } from '../supabase/server'
+import { createAdminClient } from '../supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // ESP32 API Key - should match the one in devices route
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Verify device exists
     const { data: deviceExists, error: deviceError } = await supabase
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Use the RPC function from your SQL
     const { data, error } = await supabase

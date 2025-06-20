@@ -1,4 +1,4 @@
-import { createClient } from '../supabase/server'
+import { createAdminClient } from '../supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // ESP32 API Key - store this in environment variables
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     // Check if device already exists (for update)
     if (body.device_uuid) {
@@ -163,7 +163,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = await createAdminClient()
 
     const updateData: any = {
       updated_at: new Date().toISOString()
