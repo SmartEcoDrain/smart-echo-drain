@@ -244,6 +244,92 @@ end;
 $$;
 
 
+-- RPC function to get public profiles list (available to all users including anon)
+create or replace function public.get_public_profiles(
+  limit_count int default 20,
+  offset_count int default 0,
+  search_query text default null
+)
+returns table(
+  uuid uuid,
+  email text,
+  full_name text,
+  profile_image text,
+  created_at timestamptz
+)
+security definer
+set search_path = public
+language plpgsql
+as $$
+begin
+  return query
+  select p.uuid, p.email, p.full_name, p.profile_image, p.created_at
+  from profiles p
+  where (search_query is null or 
+         p.full_name ilike '%' || search_query || '%' or 
+         p.email ilike '%' || search_query || '%')
+  order by p.created_at desc
+  limit limit_count
+  offset offset_count;
+end;
+$$;
+
+-- RPC function to get public profiles count (available to all users including anon)
+create or replace function public.get_public_profiles_count(
+  search_query text default null
+)
+returns int
+security definer
+set search_path = public
+language plpgsql
+as $$
+declare
+  profile_count int;
+begin
+  select count(*)::int into profile_count
+  from profiles p
+  where (search_query is null or 
+         p.full_name ilike '%' || search_query || '%' or 
+         p.email ilike '%' || search_query || '%');
+  
+  return profile_count;
+end;
+$$;
+
+-- RPC function to get user suggestions for mentions/autocomplete (public access)
+create or replace function public.get_user_suggestions(
+  search_query text,
+  limit_count int default 10
+)
+returns table(
+  uuid uuid,
+  full_name text,
+  email text,
+  profile_image text
+)
+security definer
+set search_path = public
+language plpgsql
+as $$
+begin
+  -- Minimum 2 characters for search to prevent large data dumps
+  if length(search_query) < 2 then
+    return;
+  end if;
+  
+  return query
+  select p.uuid, p.full_name, p.email, p.profile_image
+  from profiles p
+  where p.full_name ilike '%' || search_query || '%' 
+     or p.email ilike '%' || search_query || '%'
+  order by 
+    case when p.full_name ilike search_query || '%' then 1 else 2 end,
+    p.full_name
+  limit limit_count;
+end;
+$$;
+
+
 CREATE TRIGGER update_profiles_updated_at 
   BEFORE UPDATE ON public.profiles 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
