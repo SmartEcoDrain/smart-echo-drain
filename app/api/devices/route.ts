@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: DeviceRegistrationRequest = await request.json()
-
+    
     // Validate required fields
     if (!body.uuid || !body.name || !body.device_version || !body.location) {
       return NextResponse.json(
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
- 
+
       // Update existing device
       if (existingDevice) {
         const { data, error } = await supabase
@@ -105,18 +105,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new device
+    const insertData: any = {
+      uuid: body.uuid,
+      name: body.name,
+      location: body.location,
+      device_version: body.device_version,
+      config: body.config || {},
+      online_status: true,
+      is_active: true
+    }
+
+    if (body.owner_uuid) {
+      insertData.owner_uuid = body.owner_uuid
+    }
+
     const { data, error } = await supabase
       .from('devices')
-      .insert({
-        uuid: body.uuid,
-        owner_uuid: body.owner_uuid,
-        name: body.name,
-        location: body.location,
-        device_version: body.device_version,
-        config: body.config || {},
-        online_status: true,
-        is_active: true
-      })
+      .insert(insertData)
       .select()
       .single()
 
@@ -153,7 +158,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body: DeviceUpdateRequest = await request.json()
-
+    
     if (!body.uuid) {
       return NextResponse.json(
         { error: 'Missing required field: device_uuid' },
@@ -226,9 +231,9 @@ export async function GET(request: NextRequest) {
     // Filter by specific device UUID
     if (uuid) {
       query = query.eq('uuid', uuid)
-
+      
       const { data, error } = await query.single()
-
+      
       if (error) {
         if (error.code === 'PGRST116') {
           return NextResponse.json(
