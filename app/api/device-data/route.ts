@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+
     if (error) {
       return NextResponse.json(
         { error: 'Failed to insert device data', details: error.message },
@@ -140,6 +141,8 @@ export async function POST(request: NextRequest) {
 // GET: Retrieve device data (for debugging purposes)
 export async function GET(request: NextRequest) {
   try {
+    console.log('GET device data request received')
+
     // Validate API key
     if (!validateApiKey(request)) {
       return NextResponse.json(
