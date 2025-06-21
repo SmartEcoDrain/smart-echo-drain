@@ -1,3 +1,4 @@
+
 -- Create devices table
 CREATE TABLE IF NOT EXISTS public.devices (
   uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
