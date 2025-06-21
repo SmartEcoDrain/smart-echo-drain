@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
   console.log('POST device data request received')
   try {
     // Validate API key
-    if (!validateApiKey(request)) {
-      return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 401 }
-      )
-    }
+    // if (!validateApiKey(request)) {
+    //   return NextResponse.json(
+    //     { error: 'Invalid API key' },
+    //     { status: 401 }
+    //   )
+    // }
 
     const body: DeviceDataRequest = await request.json()
     
@@ -144,13 +144,13 @@ export async function GET(request: NextRequest) {
   try {
     console.log('GET device data request received')
 
-    // Validate API key
-    if (!validateApiKey(request)) {
-      return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 401 }
-      )
-    }
+    // // Validate API key
+    // if (!validateApiKey(request)) {
+    //   return NextResponse.json(
+    //     { error: 'Invalid API key' },
+    //     { status: 401 }
+    //   )
+    // }
 
     const { searchParams } = new URL(request.url)
     const device_id = searchParams.get('device_id')
