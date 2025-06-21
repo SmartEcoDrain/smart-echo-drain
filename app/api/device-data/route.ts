@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: Retrieve device data (for debugging purposes)
+// GET: Retrieve device data with deployment status check
 export async function GET(request: NextRequest) {
   try {
     // Validate API key
@@ -161,7 +161,23 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // Use the RPC function from your SQL
+    // Check if device has any data (is deployed)
+    const { data: deviceDataCheck, error: checkError } = await supabase
+      .from('device_data')
+      .select('device_id')
+      .eq('device_id', device_id)
+      .limit(1)
+
+    if (checkError) {
+      return NextResponse.json(
+        { error: 'Failed to check device deployment status', details: checkError.message },
+        { status: 500 }
+      )
+    }
+
+    const isDeployed = deviceDataCheck && deviceDataCheck.length > 0
+
+    // Use the RPC function to get device data
     const { data, error } = await supabase
       .rpc('get_device_data', {
         device_uuid: device_id,
@@ -177,7 +193,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: data
+      data: data,
+      isDeployed: isDeployed,
+      totalRecords: data?.length || 0
     })
 
   } catch (error) {
