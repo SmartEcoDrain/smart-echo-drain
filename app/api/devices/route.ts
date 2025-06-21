@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const body: DeviceRegistrationRequest = await request.json()
     
     // Validate required fields
-    if (!body.uuid || !body.name || !body.device_version || !body.location || !body.data) {
+    if (!body.uuid || !body.name || !body.device_version || !body.location) {
       return NextResponse.json(
         { error: 'Missing required fields: uuid, name, device_version, location, data ' },
         { status: 400 }
