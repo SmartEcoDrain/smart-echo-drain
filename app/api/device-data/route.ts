@@ -40,6 +40,7 @@ function validateApiKey(request: NextRequest): boolean {
 
 // POST: Insert device data
 export async function POST(request: NextRequest) {
+  console.log('POST device data request received')
   try {
     // Validate API key
     if (!validateApiKey(request)) {
