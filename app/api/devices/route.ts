@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
-
+ 
       // Update existing device
       if (existingDevice) {
         const { data, error } = await supabase
