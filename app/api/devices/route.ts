@@ -19,6 +19,7 @@ interface DeviceRegistrationRequest {
   }
   device_version: string
   config?: Record<string, any>
+  data?: Record<string, any>
 }
 
 interface DeviceUpdateRequest {
@@ -28,6 +29,7 @@ interface DeviceUpdateRequest {
   online_status?: boolean
   is_active?: boolean
   config?: Record<string, any>
+  data?: Record<string, any>
 }
 
 function validateApiKey(request: NextRequest): boolean {
@@ -49,9 +51,9 @@ export async function POST(request: NextRequest) {
     const body: DeviceRegistrationRequest = await request.json()
     
     // Validate required fields
-    if (!body.uuid || !body.name || !body.device_version || !body.location) {
+    if (!body.uuid || !body.name || !body.device_version || !body.location || !body.data) {
       return NextResponse.json(
-        { error: 'Missing required fields: uuid, name, device_version, location' },
+        { error: 'Missing required fields: uuid, name, device_version, location, data ' },
         { status: 400 }
       )
     }
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
             device_version: body.device_version,
             config: body.config || {},
             online_status: true,
+            data: body.data || {},
             updated_at: new Date().toISOString()
           })
           .eq('uuid', body.uuid)
@@ -112,7 +115,8 @@ export async function POST(request: NextRequest) {
       device_version: body.device_version,
       config: body.config || {},
       online_status: true,
-      is_active: true
+      is_active: true,
+      data: body.data || {}
     }
 
     if (body.owner_uuid) {
@@ -177,6 +181,7 @@ export async function PUT(request: NextRequest) {
     if (body.online_status !== undefined) updateData.online_status = body.online_status
     if (body.is_active !== undefined) updateData.is_active = body.is_active
     if (body.config !== undefined) updateData.config = body.config
+    if (body.data !== undefined) updateData.data = body.data
 
     const { data, error } = await supabase
       .from('devices')
@@ -272,6 +277,7 @@ export async function GET(request: NextRequest) {
     if (active_only) {
       query = query.eq('is_active', true)
     }
+    
 
     // Order by updated_at descending
     query = query.order('updated_at', { ascending: false })
